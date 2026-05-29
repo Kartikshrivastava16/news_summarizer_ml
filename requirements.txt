@@ -1,0 +1,13 @@
+# Python dependencies — News Article Summarizer
+
+# PyTorch (CPU build is fine for inference)
+torch>=2.2.0
+
+# Hugging Face Transformers — BART model
+transformers>=4.40.0
+
+# Tokenizer required by BART
+sentencepiece>=0.1.99
+
+# Testing
+pytest>=8.0.0

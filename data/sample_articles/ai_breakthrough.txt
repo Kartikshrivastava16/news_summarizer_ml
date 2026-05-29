@@ -1,0 +1,9 @@
+Scientists at a leading research lab have developed a new artificial intelligence system
+capable of solving complex mathematical theorems that previously stumped human mathematicians
+for decades. The system, trained on millions of mathematical proofs, uses a novel
+reinforcement-learning approach where it receives rewards for logically valid proof steps.
+Researchers say this could accelerate discoveries in fields from cryptography to physics.
+The team published their findings in Nature, and the model is expected to be open-sourced
+by the end of the year. Critics warn, however, that the system still struggles with
+problems requiring creative intuition rather than pattern recognition. Several universities
+have already expressed interest in integrating the tool into graduate-level research programs.
