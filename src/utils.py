@@ -1,7 +1,7 @@
 """
-utils.py
-────────
-Shared helpers: text cleaning, file loading, and saving summaries.
+src/utils.py
+────────────
+Shared helpers: text cleaning, file I/O, output saving.
 """
 
 import re
@@ -10,37 +10,15 @@ from datetime import datetime
 
 
 def clean_text(text: str) -> str:
-    """
-    Normalise raw article text:
-      - Strip HTML tags
-      - Collapse newlines / tabs into single spaces
-      - Collapse multiple spaces into one
-
-    Args:
-        text: Raw input string.
-
-    Returns:
-        Cleaned string.
-    """
-    text = re.sub(r'<[^>]+>', '', text)           # remove HTML tags
-    text = re.sub(r'[\r\n\t]+', ' ', text)        # newlines → space
-    text = re.sub(r' {2,}', ' ', text)            # collapse spaces
+    """Strip HTML tags, normalise whitespace."""
+    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r'[\r\n\t]+', ' ', text)
+    text = re.sub(r' {2,}', ' ', text)
     return text.strip()
 
 
 def load_article_from_file(filepath: str) -> str:
-    """
-    Read a .txt article from disk.
-
-    Args:
-        filepath: Absolute or relative path to the text file.
-
-    Returns:
-        File contents as a string.
-
-    Raises:
-        FileNotFoundError if the path does not exist.
-    """
+    """Read a plain-text article from disk."""
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"File not found: {filepath}")
     with open(filepath, "r", encoding="utf-8") as f:
@@ -49,18 +27,18 @@ def load_article_from_file(filepath: str) -> str:
 
 def save_summary(
     article_title: str,
-    abstractive: str,
     extractive: str,
     output_dir: str = "outputs",
+    abstractive: str = "",
 ) -> str:
     """
-    Write both summaries to a timestamped .txt file.
+    Write the summary/summaries to a timestamped .txt file in output_dir.
 
     Args:
-        article_title : Display name for the article.
-        abstractive   : Abstractive summary text.
-        extractive    : Extractive summary text.
-        output_dir    : Folder to write the file into.
+        article_title:  Title of the article (used in filename + header).
+        extractive:     Extractive summary text.
+        output_dir:     Directory to write the file into (created if missing).
+        abstractive:    Abstractive summary text (optional).
 
     Returns:
         Full path of the saved file.
@@ -74,9 +52,14 @@ def save_summary(
         f.write(f"ARTICLE   : {article_title}\n")
         f.write(f"GENERATED : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("=" * 60 + "\n\n")
-        f.write("ABSTRACTIVE SUMMARY (BART model):\n")
-        f.write(abstractive + "\n\n")
-        f.write("EXTRACTIVE SUMMARY (frequency-based):\n")
-        f.write(extractive + "\n")
+
+        f.write("EXTRACTIVE SUMMARY  (frequency scoring · offline):\n")
+        f.write("-" * 60 + "\n")
+        f.write((extractive or "(none)") + "\n\n")
+
+        if abstractive:
+            f.write("ABSTRACTIVE SUMMARY  (HuggingFace BART · generated text):\n")
+            f.write("-" * 60 + "\n")
+            f.write(abstractive + "\n")
 
     return filepath

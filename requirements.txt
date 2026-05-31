@@ -1,13 +1,23 @@
-# Python dependencies — News Article Summarizer
+# ── News Article Summarizer — Python Dependencies ──────────────────────
+# Install with:  pip install -r requirements.txt
 
-# PyTorch (CPU build is fine for inference)
-torch>=2.2.0
+# ── Web framework ──────────────────────────────────────────────────────
+flask>=3.0.0
 
-# Hugging Face Transformers — BART model
+# ── HuggingFace Transformers (abstractive summarization) ───────────────
+# BART / T5 models for sequence-to-sequence text generation
 transformers>=4.40.0
 
-# Tokenizer required by BART
-sentencepiece>=0.1.99
+# PyTorch — required backend for HuggingFace models
+# CPU-only build (smaller download). For GPU support replace with:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+torch>=2.2.0
 
-# Testing
+# SentencePiece — tokenizer used by T5 and other models
+sentencepiece>=0.2.0
+
+# Accelerate — optional but recommended for faster model loading
+accelerate>=0.29.0
+
+# ── Testing ────────────────────────────────────────────────────────────
 pytest>=8.0.0

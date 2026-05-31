@@ -1,12 +1,17 @@
 """
 main.py
 ───────
-Entry point for the News Article Summarizer.
+Command-line entry point for the News Article Summarizer.
 
-Usage:
-    python main.py                          # summarise all sample articles
-    python main.py --file path/article.txt  # summarise a specific file
-    python main.py --interactive            # paste your own article
+Usage examples
+──────────────
+  python main.py                              # Summarise all sample articles (extractive)
+  python main.py --mode both                  # Extractive + Abstractive on all samples
+  python main.py --file path/article.txt      # Summarise a specific .txt file
+  python main.py --file path/article.txt --mode abstractive
+  python main.py --interactive                # Paste your own article in the terminal
+  python main.py --web                        # Launch the local web UI (localhost:5000)
+  python main.py --sentences 5               # Extract 5 sentences instead of 3
 """
 
 import os
@@ -14,51 +19,54 @@ import sys
 import argparse
 import textwrap
 
-# ── make sure the project root is on the path ──────────────────────────
 ROOT = os.path.dirname(os.path.abspath(__file__))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-# ───────────────────────────────────────────────────────────────────────
 
+from src.extractive_summarizer  import ExtractiveSummarizer
 from src.abstractive_summarizer import AbstractiveSummarizer
-from src.extractive_summarizer import ExtractiveSummarizer
 from src.utils import clean_text, load_article_from_file, save_summary
 
 SAMPLE_DIR = os.path.join(ROOT, "data", "sample_articles")
 OUTPUT_DIR = os.path.join(ROOT, "outputs")
-W = 70  # terminal line width
+W          = 72
 
 
-# ── pretty printers ─────────────────────────────────────────────────────
+# ── Display helpers ────────────────────────────────────────────────────
 
 def header():
-    print("\n" + "═" * W)
-    print("   📰  NEWS ARTICLE SUMMARIZER")
-    print("   NLP · Extractive  +  Abstractive  (BART)")
-    print("═" * W + "\n")
+    bar = "═" * W
+    print(f"\n{bar}")
+    print("   📰  NEWS ARTICLE SUMMARIZER  —  ML / NLP Project")
+    print("   Extractive · Abstractive (HuggingFace Transformers)")
+    print(f"{bar}\n")
 
 
-def print_result(title: str, abstractive: str, extractive: str):
-    print(f"\n{'─' * W}")
+def print_result(title: str, extractive: str, abstractive: str = ""):
+    bar  = "─" * W
+    dots = "·" * (W - 2)
+    print(f"\n{bar}")
     print(f"  ARTICLE : {title}")
-    print(f"{'─' * W}")
+    print(bar)
 
-    print("\n  🤖  Abstractive Summary  (BART — Hugging Face Transformers)")
-    print("  " + "·" * (W - 2))
-    for line in textwrap.wrap(abstractive, width=W - 4):
-        print("    " + line)
+    if extractive:
+        print("\n  ✂️   Extractive Summary  (frequency scoring · offline)")
+        print(f"  {dots}")
+        for line in textwrap.wrap(extractive, width=W - 4):
+            print("    " + line)
 
-    print("\n  ✂️   Extractive Summary  (frequency-based · offline)")
-    print("  " + "·" * (W - 2))
-    for line in textwrap.wrap(extractive, width=W - 4):
-        print("    " + line)
+    if abstractive:
+        print("\n  🤖  Abstractive Summary  (HuggingFace BART · generated)")
+        print(f"  {dots}")
+        for line in textwrap.wrap(abstractive, width=W - 4):
+            print("    " + line)
+
     print()
 
 
-# ── run modes ────────────────────────────────────────────────────────────
+# ── Run modes ──────────────────────────────────────────────────────────
 
-def run_demo(abs_m: AbstractiveSummarizer, ext_m: ExtractiveSummarizer):
-    """Summarise every .txt file in data/sample_articles/."""
+def run_demo(ext_m: ExtractiveSummarizer, abs_m: AbstractiveSummarizer, mode: str):
     files = sorted(f for f in os.listdir(SAMPLE_DIR) if f.endswith(".txt"))
     if not files:
         print("  [!] No .txt files found in data/sample_articles/")
@@ -66,34 +74,32 @@ def run_demo(abs_m: AbstractiveSummarizer, ext_m: ExtractiveSummarizer):
 
     for fname in files:
         title = fname.replace("_", " ").replace(".txt", "").title()
-        text  = clean_text(load_article_from_file(os.path.join(SAMPLE_DIR, fname)))
+        raw   = load_article_from_file(os.path.join(SAMPLE_DIR, fname))
+        text  = clean_text(raw)
 
-        abstract  = abs_m.summarize(text)
-        extracted = ext_m.summarize(text)
+        extractive  = ext_m.summarize(text) if mode in ("extractive", "both") else ""
+        abstractive = abs_m.summarize(text) if mode in ("abstractive", "both") else ""
 
-        print_result(title, abstract, extracted)
-        saved = save_summary(title, abstract, extracted, OUTPUT_DIR)
+        print_result(title, extractive, abstractive)
+        saved = save_summary(title, extractive or "(not requested)", OUTPUT_DIR, abstractive=abstractive)
         print(f"  💾  Saved → {saved}\n")
 
 
-def run_file(path: str, abs_m: AbstractiveSummarizer, ext_m: ExtractiveSummarizer):
-    """Summarise a single user-specified .txt file."""
-    title     = os.path.basename(path).replace("_", " ").replace(".txt", "").title()
-    text      = clean_text(load_article_from_file(path))
-    abstract  = abs_m.summarize(text)
-    extracted = ext_m.summarize(text)
+def run_file(path: str, ext_m: ExtractiveSummarizer, abs_m: AbstractiveSummarizer, mode: str):
+    title = os.path.basename(path).replace("_", " ").replace(".txt", "").title()
+    text  = clean_text(load_article_from_file(path))
 
-    print_result(title, abstract, extracted)
-    saved = save_summary(title, abstract, extracted, OUTPUT_DIR)
+    extractive  = ext_m.summarize(text) if mode in ("extractive", "both") else ""
+    abstractive = abs_m.summarize(text) if mode in ("abstractive", "both") else ""
+
+    print_result(title, extractive, abstractive)
+    saved = save_summary(title, extractive or "(not requested)", OUTPUT_DIR, abstractive=abstractive)
     print(f"  💾  Saved → {saved}\n")
 
 
-def run_interactive(abs_m: AbstractiveSummarizer, ext_m: ExtractiveSummarizer):
-    """Accept article text typed / pasted in the terminal."""
+def run_interactive(ext_m: ExtractiveSummarizer, abs_m: AbstractiveSummarizer, mode: str):
     print("\n  📝  INTERACTIVE MODE")
-    print("  Paste your article below.")
-    print("  Type  END  on a new blank line when finished.\n")
-
+    print("  Paste your article below. Type  END  on its own line when finished.\n")
     lines = []
     while True:
         try:
@@ -109,40 +115,71 @@ def run_interactive(abs_m: AbstractiveSummarizer, ext_m: ExtractiveSummarizer):
         print("  [!] No text entered. Exiting.")
         return
 
-    text      = clean_text(raw)
-    abstract  = abs_m.summarize(text)
-    extracted = ext_m.summarize(text)
+    text = clean_text(raw)
+    extractive  = ext_m.summarize(text) if mode in ("extractive", "both") else ""
+    abstractive = abs_m.summarize(text) if mode in ("abstractive", "both") else ""
 
-    print_result("User Article", abstract, extracted)
-    saved = save_summary("User Article", abstract, extracted, OUTPUT_DIR)
+    print_result("User Article", extractive, abstractive)
+    saved = save_summary("User Article", extractive or "(not requested)", OUTPUT_DIR, abstractive=abstractive)
     print(f"  💾  Saved → {saved}\n")
 
 
-# ── entry point ──────────────────────────────────────────────────────────
+def run_web():
+    try:
+        from app import create_app
+        flask_app = create_app()
+        print("\n  🌐  Web UI starting at  http://localhost:5000")
+        print("  Press  Ctrl+C  to stop.\n")
+        flask_app.run(debug=False, host="0.0.0.0", port=5000)
+    except ImportError:
+        print("  [!] Flask not installed.  Run:  pip install flask")
+        sys.exit(1)
+
+
+# ── Entry point ────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="News Article Summarizer")
-    parser.add_argument("--interactive", action="store_true",
-                        help="Paste your own article in the terminal.")
-    parser.add_argument("--file", type=str, default=None,
-                        help="Path to a .txt file to summarise.")
+    parser = argparse.ArgumentParser(description="News Article Summarizer — ML/NLP Project")
+    parser.add_argument("--interactive", action="store_true", help="Paste your own article in the terminal")
+    parser.add_argument("--file",        type=str, default=None, help="Path to a .txt article file")
+    parser.add_argument("--web",         action="store_true",    help="Launch the Flask web UI")
+    parser.add_argument("--sentences",   type=int, default=3,    help="Number of sentences to extract (default: 3)")
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="extractive",
+        choices=["extractive", "abstractive", "both"],
+        help="Summarization mode (default: extractive)",
+    )
     args = parser.parse_args()
+
+    if args.web:
+        run_web()
+        return
 
     header()
 
+    ext_m = ExtractiveSummarizer(num_sentences=args.sentences)
     abs_m = AbstractiveSummarizer()
-    ext_m = ExtractiveSummarizer(num_sentences=3)
+
+    # Warn if abstractive mode requested but transformers not installed
+    if args.mode in ("abstractive", "both") and not abs_m.is_available():
+        print("  ⚠️  WARNING: transformers is not installed.")
+        print("  Run:  pip install transformers torch sentencepiece")
+        print("  Falling back to extractive-only mode.\n")
+        args.mode = "extractive"
 
     if args.file:
-        run_file(args.file, abs_m, ext_m)
+        run_file(args.file, ext_m, abs_m, args.mode)
     elif args.interactive:
-        run_interactive(abs_m, ext_m)
+        run_interactive(ext_m, abs_m, args.mode)
     else:
-        run_demo(abs_m, ext_m)
+        run_demo(ext_m, abs_m, args.mode)
 
-    print("═" * W)
-    print("  ✅  Done! Summaries saved to  outputs/")
-    print("═" * W + "\n")
+    bar = "═" * W
+    print(bar)
+    print("  ✅  Done!  Summaries saved to  outputs/")
+    print(f"{bar}\n")
 
 
 if __name__ == "__main__":

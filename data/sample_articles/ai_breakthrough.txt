@@ -1,9 +1,7 @@
-Scientists at a leading research lab have developed a new artificial intelligence system
-capable of solving complex mathematical theorems that previously stumped human mathematicians
-for decades. The system, trained on millions of mathematical proofs, uses a novel
-reinforcement-learning approach where it receives rewards for logically valid proof steps.
-Researchers say this could accelerate discoveries in fields from cryptography to physics.
-The team published their findings in Nature, and the model is expected to be open-sourced
-by the end of the year. Critics warn, however, that the system still struggles with
-problems requiring creative intuition rather than pattern recognition. Several universities
-have already expressed interest in integrating the tool into graduate-level research programs.
+Scientists have made a groundbreaking discovery in the field of artificial intelligence. A team of researchers at a leading technology institute unveiled a new deep learning model capable of diagnosing rare diseases with accuracy that surpasses human doctors in controlled trials. The system, trained on over 50 million medical records, correctly identified 94 percent of rare genetic conditions compared to 87 percent by specialist physicians.
+
+The AI model uses a transformer-based architecture similar to those found in large language models, but fine-tuned specifically on genomic and clinical data. Unlike previous diagnostic tools, this new system can explain its reasoning, highlighting which symptoms and biomarkers most influenced its decision. This transparency is considered a major step forward in making AI trustworthy for clinical use.
+
+Researchers say the technology could be particularly valuable in rural and low-income regions where access to specialist doctors is limited. A smartphone application is currently being developed to make the tool widely accessible. The project received funding from several international health organizations and is expected to begin clinical trials next year.
+
+Critics have raised questions about patient data privacy and the potential for algorithmic bias in communities underrepresented in the training data. The research team acknowledged these concerns and said they are actively working to address them by expanding the dataset and implementing strict privacy protocols. They believe responsible deployment of this technology could save thousands of lives annually.

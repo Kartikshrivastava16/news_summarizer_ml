@@ -1,72 +1,71 @@
-# 📰 News Article Summarizer
+# 📰 News Article Summarizer — ML/NLP Project
 
-**Kartik Shrivastava**  
-ML Project — NLP · Extractive + Abstractive Summarization
+**Kartik Shrivastava** · Hex Softwares Internship · Project 1
 
 ---
 
-## 📁 Project Structure
+## 🗂️ Project Structure
 
 ```
 news_summarizer_ml/
 │
-├── main.py                         ← Entry point — run this
+├── main.py                          ← CLI entry point
+├── app.py                           ← Flask web server
+├── requirements.txt
+├── README.md
 │
-├── src/                            ← Core Python package
+├── src/
 │   ├── __init__.py
-│   ├── abstractive_summarizer.py   ← BART model (Hugging Face)
-│   ├── extractive_summarizer.py    ← Offline frequency-based method
-│   └── utils.py                    ← Text cleaning, file I/O, saving
+│   ├── extractive_summarizer.py     ← Frequency-based NLP (offline)
+│   └── utils.py                     ← Text cleaning, file I/O, saving
+│
+├── templates/
+│   └── index.html                   ← Web UI
 │
 ├── data/
-│   └── sample_articles/            ← Ready-to-use .txt news articles
+│   └── sample_articles/
 │       ├── ai_breakthrough.txt
 │       ├── climate_report.txt
 │       └── space_exploration.txt
 │
-├── outputs/                        ← Summaries auto-saved here
+├── outputs/                         ← Auto-saved summaries
 │
-├── tests/
-│   └── test_summarizers.py         ← pytest unit tests
-│
-├── notebooks/                      ← Jupyter notebooks (optional)
-│
-├── requirements.txt
-└── README.md
+└── tests/
+    └── test_summarizers.py
 ```
 
 ---
 
-## 🧠 Techniques
+## 🧠 How it works
 
-| Method | Approach | Library |
-|---|---|---|
-| **Abstractive** | BART generates new sentences | Hugging Face Transformers |
-| **Extractive** | Frequency scoring picks top sentences | Pure Python (offline) |
+Word-frequency extractive summarization — fully offline, no model download:
 
-```
-News Article
-    │
-    ├──▶ Extractive  →  score sentences by word freq  →  pick top-N
-    │
-    └──▶ Abstractive →  BART encoder-decoder          →  generate summary
-```
+1. **Clean** — strip HTML, collapse whitespace
+2. **Split** — tokenise into sentences
+3. **Score** — build normalised word-frequency table, score each sentence
+4. **Extract** — pick top-N sentences, return in original reading order
 
 ---
 
 ## ⚙️ Setup
 
-### 1 · Install dependencies
-
 ```bash
 pip install -r requirements.txt
 ```
 
-> The BART model (~1.6 GB) downloads automatically on the first run and is cached locally.
+Only `flask` and `pytest` are needed — no heavy ML libraries.
 
-### 2 · Run
+---
 
-**Demo** — summarises all 3 sample articles:
+## ▶️ Run
+
+**Web UI:**
+```bash
+python app.py
+# Open: http://localhost:5000
+```
+
+**CLI demo** (all sample articles):
 ```bash
 python main.py
 ```
@@ -76,48 +75,12 @@ python main.py
 python main.py --file data/sample_articles/climate_report.txt
 ```
 
-**Interactive** — paste any article in the terminal:
+**Interactive** (paste in terminal):
 ```bash
 python main.py --interactive
 ```
-Type your article, then type `END` on a new line to submit.
 
-**Unit tests:**
+**Tests:**
 ```bash
 python -m pytest tests/ -v
 ```
-
----
-
-## 📤 Output
-
-Each run saves a `.txt` file in `outputs/`:
-
-```
-outputs/
-└── summary_Climate_Report_20250528_143012.txt
-```
-
-Contents:
-```
-ARTICLE   : Climate Report
-GENERATED : 2025-05-28 14:30:12
-============================================================
-
-ABSTRACTIVE SUMMARY (BART model):
-...
-
-EXTRACTIVE SUMMARY (frequency-based):
-...
-```
-
----
-
-## 🔑 Libraries
-
-| Library | Purpose |
-|---|---|
-| `transformers` | BART model loading & inference |
-| `torch` | PyTorch backend |
-| `sentencepiece` | BART tokenizer dependency |
-| `pytest` | Unit testing |

@@ -1,8 +1,7 @@
-A new United Nations report warns that global average temperatures could rise by 2.5 degrees
-Celsius above pre-industrial levels by 2050 if current emission trends continue. The report,
-compiled by over 800 scientists across 60 countries, highlights that the last decade was the
-warmest on record. Sea levels have risen by 20 cm since 1900, and the pace is accelerating.
-Governments are being urged to triple renewable energy investments and phase out coal by 2030.
-The report also notes positive developments: solar energy costs have dropped 89% in the past
-decade, and electric vehicle adoption has surpassed earlier projections. However, deforestation
-in tropical regions continues to undermine carbon-capture efforts at an alarming rate.
+The United Nations released its most comprehensive climate assessment to date, warning that global temperatures are on track to rise by 2.7 degrees Celsius above pre-industrial levels by the end of this century if current policies remain unchanged. The report, compiled by over 800 scientists from 95 countries, represents the most detailed picture yet of the climate crisis and its projected impacts on human societies and ecosystems.
+
+Sea levels are rising faster than previously projected, threatening coastal cities that are home to hundreds of millions of people. The report identifies Miami, Mumbai, Shanghai, and Jakarta as among the most vulnerable urban centers. Scientists warn that without significant infrastructure investment and emissions reductions, permanent flooding of low-lying neighborhoods could begin within 30 years.
+
+Extreme weather events including heat waves, droughts, hurricanes, and wildfires are increasing in both frequency and severity. Last year alone, climate-related disasters caused an estimated 280 billion dollars in economic damage worldwide. Agricultural yields in tropical regions have already declined by 10 to 15 percent compared to 1990 levels, putting food security at risk for some of the world's poorest populations.
+
+Despite the alarming findings, the report also highlights a path forward. Transitioning to renewable energy, protecting and restoring forests, and adopting sustainable agriculture practices could collectively limit warming to 1.5 degrees Celsius. Solar and wind energy are now cheaper than fossil fuels in most markets, and electric vehicle adoption is accelerating rapidly. Scientists emphasize that every fraction of a degree of warming avoided will prevent measurable harm and that swift collective action remains both possible and necessary.
