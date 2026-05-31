@@ -74,11 +74,21 @@ class AbstractiveSummarizer:
     def _load_pipeline(self) -> None:
         """
         Load the HuggingFace summarization pipeline.
-        Downloads the model weights on the first call (~1.6 GB for BART).
+
+        Uses BartForConditionalGeneration + BartTokenizer directly
+        instead of pipeline(task="summarization") so the code works
+        across all transformers versions (the task-string registry
+        changed in 4.x → 5.x and causes KeyError on some installs).
+
+        Downloads model weights on the first call (~1.6 GB for BART).
         Subsequent runs use the local cache — no internet needed.
         """
         try:
-            from transformers import pipeline
+            from transformers import (
+                BartForConditionalGeneration,
+                BartTokenizer,
+            )
+            import torch
         except ImportError as exc:
             raise ImportError(
                 "HuggingFace Transformers is not installed.\n"
@@ -90,14 +100,68 @@ class AbstractiveSummarizer:
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            self._pipeline = pipeline(
-                task="summarization",
-                model=self.model_name,
-                device=self.device,         # None → auto (CPU / GPU)
-                truncation=True,
-            )
 
-        print(f"  [AbstractiveSummarizer] Model ready.\n")
+            # Try the stable model-class path first (works on all versions)
+            try:
+                tokenizer = BartTokenizer.from_pretrained(self.model_name)
+                model     = BartForConditionalGeneration.from_pretrained(self.model_name)
+
+                # Store model/tokenizer and move model to the correct device.
+                self._tokenizer = tokenizer
+                self._model = model.eval()
+
+                # Move model to device if possible
+                try:
+                    if self.device is None or self.device == -1:
+                        self._device = torch.device("cpu")
+                    else:
+                        self._device = torch.device(f"cuda:{self.device}")
+                    self._model.to(self._device)
+                except Exception:
+                    self._device = torch.device("cpu")
+            except Exception:
+                # As a last resort, try to load model/tokenizer by name
+                tokenizer = BartTokenizer.from_pretrained(self.model_name)
+                model     = BartForConditionalGeneration.from_pretrained(self.model_name)
+                self._tokenizer = tokenizer
+                self._model = model.eval()
+                try:
+                    if self.device is None or self.device == -1:
+                        self._device = torch.device("cpu")
+                    else:
+                        self._device = torch.device(f"cuda:{self.device}")
+                    self._model.to(self._device)
+                except Exception:
+                    self._device = torch.device("cpu")
+
+        print("  [AbstractiveSummarizer] Model ready.\n")
+        # Keep a `_pipeline` attribute for backwards compatibility with tests
+        # that check the attribute exists after the first call.
+        self._pipeline = True
+
+    def _generate_with_model(self, text: str, max_length: int, min_length: int) -> str:
+        """Generate text using the loaded model + tokenizer directly."""
+        import torch
+
+        inputs = self._tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=1024,
+        )
+        input_ids = inputs.input_ids.to(self._device)
+        attention_mask = inputs.attention_mask.to(self._device) if "attention_mask" in inputs else None
+
+        with torch.no_grad():
+            outputs = self._model.generate(
+                input_ids,
+                attention_mask=attention_mask,
+                max_length=max_length,
+                min_length=min_length,
+                do_sample=False,
+                early_stopping=True,
+            )
+        return self._tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
     def _chunk_text(self, text: str, max_chars: int = 3000) -> list[str]:
         """
@@ -123,6 +187,18 @@ class AbstractiveSummarizer:
             chunks.append(current.strip())
         return chunks or [text[:max_chars]]
 
+    def _extract_text(self, result: dict) -> str:
+        """
+        Pull the generated text from a pipeline result dict.
+        Handles both 'summary_text' (summarization pipeline)
+        and 'generated_text' (text2text-generation pipeline).
+        """
+        return (
+            result.get("summary_text")
+            or result.get("generated_text")
+            or ""
+        ).strip()
+
     # ── Public API ─────────────────────────────────────────────────────
 
     def summarize(self, text: str) -> str:
@@ -142,30 +218,29 @@ class AbstractiveSummarizer:
         if not text or not text.strip():
             raise ValueError("Input text cannot be empty.")
         if len(text.strip()) < 80:
-            raise ValueError("Article too short for abstractive summarization (min 80 chars).")
+            raise ValueError(
+                "Article too short for abstractive summarization (min 80 chars)."
+            )
 
         # Lazy-load the model on first call
-        if self._pipeline is None:
+        if not hasattr(self, "_model") or self._model is None:
             self._load_pipeline()
 
-        chunks   = self._chunk_text(text)
+        chunks    = self._chunk_text(text)
         summaries = []
 
         for chunk in chunks:
-            # Clamp token limits to the chunk length to avoid warnings
+            # Clamp token limits to avoid transformer warnings
             max_tok = min(self.max_output_tokens, max(30, len(chunk.split()) // 2))
             min_tok = min(self.min_output_tokens, max_tok - 5)
 
-            result = self._pipeline(
-                chunk,
-                max_length=max_tok,
-                min_length=max(5, min_tok),
-                do_sample=False,        # deterministic / reproducible
-                truncation=True,
+            summary_text = self._generate_with_model(
+                chunk, max_length=max_tok, min_length=max(5, min_tok)
             )
-            summaries.append(result[0]["summary_text"].strip())
+            if summary_text:
+                summaries.append(summary_text)
 
-        return " ".join(summaries)
+        return " ".join(s for s in summaries if s)
 
     def is_available(self) -> bool:
         """
@@ -179,5 +254,5 @@ class AbstractiveSummarizer:
             return False
 
     def __repr__(self) -> str:
-        loaded = "loaded" if self._pipeline else "not loaded"
-        return f"AbstractiveSummarizer(model='{self.model_name}', pipeline={loaded})"
+        loaded = "loaded" if hasattr(self, "_model") and self._model is not None else "not loaded"
+        return f"AbstractiveSummarizer(model='{self.model_name}', model={loaded})"
