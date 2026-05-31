@@ -5,181 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NewsML — Article Summarizer</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --black:#000; --white:#fff; --gray-1:#111; --gray-2:#1a1a1a;
-      --gray-3:#2a2a2a; --gray-4:#444; --gray-5:#888; --gray-6:#bbb;
-      --gray-7:#ddd; --gray-8:#eee; --border:#222;
-    }
-    html { scroll-behavior: smooth; }
-    body { font-family:'IBM Plex Sans',sans-serif; background:var(--black); color:var(--white); min-height:100vh; overflow-x:hidden; }
-    body::after {
-      content:''; position:fixed; inset:0;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-      pointer-events:none; z-index:9999; opacity:.5;
-    }
-    #progress-bar { position:fixed; top:0; left:0; height:2px; background:var(--white); width:0%; z-index:500; transition:width .3s ease; }
-
-    /* HEADER */
-    header { position:sticky; top:0; z-index:200; background:var(--black); border-bottom:1px solid var(--border); padding:0 40px; height:56px; display:flex; align-items:center; justify-content:space-between; }
-    .logo { font-family:'Playfair Display',serif; font-weight:900; font-size:20px; letter-spacing:-.5px; color:var(--white); display:flex; align-items:center; gap:12px; }
-    .logo-mark { width:28px; height:28px; background:var(--white); color:var(--black); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:900; font-family:'IBM Plex Mono',monospace; }
-    .header-tags { display:flex; gap:8px; }
-    .tag-pill { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; padding:4px 10px; border:1px solid var(--gray-4); color:var(--gray-5); }
-
-    /* MASTHEAD */
-    .masthead { position:relative; border-bottom:1px solid var(--border); overflow:hidden; }
-    .masthead-inner { max-width:1100px; margin:0 auto; padding:72px 40px 64px; display:grid; grid-template-columns:1fr 320px; gap:60px; align-items:end; }
-    .masthead-eyebrow { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gray-5); margin-bottom:20px; display:flex; align-items:center; gap:10px; }
-    .masthead-eyebrow::before { content:''; display:block; width:24px; height:1px; background:var(--gray-4); }
-    .masthead h1 { font-family:'Playfair Display',serif; font-size:clamp(48px,7vw,88px); font-weight:900; line-height:.96; letter-spacing:-3px; color:var(--white); }
-    .masthead h1 em { font-style:italic; color:var(--gray-5); }
-    .masthead-side { padding-bottom:8px; }
-    .masthead-desc { font-size:13px; line-height:1.9; color:var(--gray-5); border-left:1px solid var(--border); padding-left:24px; margin-bottom:24px; }
-    .masthead-stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .stat-box { border:1px solid var(--border); padding:14px 16px; }
-    .stat-box-num { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:var(--white); line-height:1; margin-bottom:4px; }
-    .stat-box-lbl { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--gray-5); }
-
-    /* TICKER */
-    .ticker { background:var(--gray-1); border-top:1px solid var(--border); height:36px; overflow:hidden; }
-    .ticker-inner { display:flex; align-items:center; white-space:nowrap; animation:ticker 30s linear infinite; height:100%; }
-    .ticker-item { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1px; color:var(--gray-5); padding:0 32px; }
-    .ticker-dot { color:var(--gray-4); margin:0 4px; }
-    @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-
-    /* LAYOUT */
-    .content-wrapper { max-width:1100px; margin:0 auto; padding:56px 40px 80px; display:grid; grid-template-columns:1fr 340px; gap:48px; }
-    .form-section { min-width:0; }
-
-    .section-label { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gray-5); display:flex; align-items:center; gap:14px; margin-bottom:24px; }
-    .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
-
-    /* FIELDS */
-    .field { margin-bottom:24px; }
-    .field-label { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray-5); display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-    .field-label .req { color:var(--white); }
-    .field-hint { font-family:'IBM Plex Sans',sans-serif; font-size:10px; color:var(--gray-4); letter-spacing:0; text-transform:none; }
-    input[type=text], textarea { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--white); background:var(--gray-1); border:1px solid var(--border); padding:12px 16px; width:100%; outline:none; resize:none; transition:border-color .15s; border-radius:0; -webkit-appearance:none; }
-    input[type=text]::placeholder, textarea::placeholder { color:var(--gray-3); }
-    input[type=text]:focus, textarea:focus { border-color:var(--gray-5); }
-    textarea { min-height:180px; line-height:1.8; }
-    .char-row { display:flex; justify-content:space-between; margin-top:6px; }
-    .char-count, .word-count { font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--gray-4); }
-    .char-count.warn { color:var(--white); }
-
-    /* MODE TOGGLE */
-    .mode-wrap { margin-bottom:28px; }
-    .mode-label { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray-5); margin-bottom:10px; display:block; }
-    .mode-btns { display:flex; gap:0; border:1px solid var(--border); }
-    .mode-btn {
-      flex:1; padding:10px 0; cursor:pointer; border:none;
-      font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1px; text-transform:uppercase;
-      background:var(--gray-1); color:var(--gray-5);
-      border-right:1px solid var(--border); transition:background .15s, color .15s;
-    }
-    .mode-btn:last-child { border-right:none; }
-    .mode-btn.active { background:var(--white); color:var(--black); }
-    .mode-btn:hover:not(.active) { background:var(--gray-2); color:var(--gray-7); }
-    .mode-hint { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--gray-4); margin-top:6px; }
-
-    /* SLIDER */
-    .slider-wrap { margin-bottom:28px; }
-    .slider-row { display:flex; align-items:center; gap:16px; margin-top:8px; }
-    input[type=range] { -webkit-appearance:none; flex:1; height:1px; background:var(--gray-3); border:none; padding:0; outline:none; cursor:pointer; }
-    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; background:var(--white); cursor:pointer; border:none; transition:transform .1s; }
-    input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.3); }
-    .range-val { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:var(--white); min-width:28px; text-align:right; }
-    .range-labels { display:flex; justify-content:space-between; margin-top:4px; font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--gray-4); }
-
-    /* NOTE BOX */
-    .note-box { border:1px solid var(--border); background:var(--gray-1); padding:14px 18px; font-size:12px; color:var(--gray-5); line-height:1.75; display:flex; gap:12px; margin-bottom:28px; }
-    .note-box code { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--gray-6); background:var(--gray-2); padding:1px 6px; }
-
-    /* ERROR */
-    #error-banner { display:none; border:1px solid var(--white); padding:12px 16px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--white); margin-bottom:16px; align-items:center; gap:8px; }
-
-    /* BUTTONS */
-    .btn-row { display:flex; gap:10px; align-items:center; }
-    .btn-run { background:var(--white); color:var(--black); font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; border:none; padding:14px 28px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:background .15s, color .15s, transform .1s; }
-    .btn-run:hover { background:var(--gray-8); }
-    .btn-run:active { transform:scale(.98); }
-    .btn-run:disabled { background:var(--gray-3); color:var(--gray-5); cursor:not-allowed; }
-    .btn-ghost { background:transparent; color:var(--gray-5); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1px; text-transform:uppercase; border:1px solid var(--border); padding:13px 20px; cursor:pointer; transition:border-color .15s, color .15s; }
-    .btn-ghost:hover { border-color:var(--gray-5); color:var(--white); }
-    .spinner { display:inline-block; width:12px; height:12px; border:2px solid var(--gray-4); border-top-color:var(--black); border-radius:50%; animation:spin .6s linear infinite; }
-    @keyframes spin { to{transform:rotate(360deg)} }
-
-    /* SIDEBAR */
-    .sidebar { padding-top:0; }
-    .how-card { border:1px solid var(--border); margin-bottom:24px; }
-    .how-card-head { background:var(--gray-1); border-bottom:1px solid var(--border); padding:12px 18px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gray-5); }
-    .how-step { padding:16px 18px; border-bottom:1px solid var(--border); display:flex; gap:14px; align-items:flex-start; }
-    .how-step:last-child { border-bottom:none; }
-    .step-n { font-family:'Playfair Display',serif; font-size:28px; font-weight:900; color:var(--gray-3); line-height:1; flex-shrink:0; width:32px; }
-    .step-title { font-family:'IBM Plex Sans',sans-serif; font-size:12px; font-weight:600; color:var(--white); margin-bottom:4px; }
-    .step-desc { font-size:11.5px; color:var(--gray-5); line-height:1.65; }
-    .algo-card { border:1px solid var(--border); }
-    .algo-card-head { background:var(--gray-1); border-bottom:1px solid var(--border); padding:12px 18px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gray-5); }
-    .algo-row { display:flex; border-bottom:1px solid var(--border); }
-    .algo-row:last-child { border-bottom:none; }
-    .algo-step { background:var(--gray-1); font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--gray-5); padding:12px 14px; border-right:1px solid var(--border); width:72px; flex-shrink:0; display:flex; align-items:center; }
-    .algo-desc { padding:12px 14px; color:var(--gray-6); line-height:1.6; font-size:11px; }
-
-    /* OUTPUT */
-    #output-section { display:none; margin-top:40px; }
-    .output-divider { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
-    .output-divider-line { flex:1; height:1px; background:var(--border); }
-    .output-divider-text { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gray-5); }
-
-    .result-panel { border:1px solid var(--gray-5); margin-bottom:20px; }
-    .result-panel:last-child { margin-bottom:0; }
-    .result-top { background:var(--white); color:var(--black); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--gray-7); }
-    .result-top h3 { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; }
-    .result-meta { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--gray-5); margin-top:3px; }
-    .btn-copy { background:var(--black); color:var(--white); border:1px solid var(--gray-4); font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:1px; text-transform:uppercase; padding:7px 14px; cursor:pointer; transition:background .15s; }
-    .btn-copy:hover { background:var(--gray-2); }
-    .result-body { padding:24px 24px 20px; }
-    .result-type-label { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--gray-4); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
-    .result-type-label::after { content:''; flex:1; height:1px; background:var(--border); }
-    .result-text { font-family:'IBM Plex Sans',sans-serif; font-size:14.5px; line-height:1.9; color:var(--gray-7); white-space:pre-wrap; background:var(--gray-1); border:1px solid var(--border); padding:18px 20px; }
-    .result-counts { display:flex; gap:20px; margin-top:10px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--gray-4); }
-
-    /* abstractive warning badge */
-    .abs-warning { background:var(--gray-1); border:1px solid var(--gray-3); padding:12px 16px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--gray-5); line-height:1.7; margin-bottom:0; }
-    .abs-warning code { color:var(--gray-6); background:var(--gray-2); padding:1px 5px; }
-
-    /* TOAST */
-    .toast { position:fixed; bottom:28px; right:28px; background:var(--white); color:var(--black); padding:12px 20px; font-family:'IBM Plex Mono',monospace; font-size:11px; display:flex; align-items:center; gap:10px; transform:translateY(60px); opacity:0; transition:all .3s cubic-bezier(.22,1,.36,1); z-index:500; border-left:3px solid var(--black); }
-    .toast.show { transform:translateY(0); opacity:1; }
-
-    /* FOOTER */
-    footer { border-top:1px solid var(--border); padding:24px 40px; display:flex; align-items:center; justify-content:space-between; max-width:1100px; margin:0 auto; }
-    .footer-left { font-family:'Playfair Display',serif; font-size:14px; color:var(--gray-4); }
-    .footer-right { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray-4); }
-
-    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-    .fade-up { animation:fadeUp .5s ease both; }
-    ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:var(--black)} ::-webkit-scrollbar-thumb{background:var(--gray-3)}
-    @media(max-width:780px) {
-      .masthead-inner,.content-wrapper{grid-template-columns:1fr}
-      .masthead-side{display:none}
-      header,footer,.masthead-inner,.content-wrapper{padding-left:20px;padding-right:20px}
-    }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
 </head>
 <body>
+
 <div id="progress-bar"></div>
 
+<!-- ── Header ──────────────────────────────────────────────────────── -->
 <header>
-  <div class="logo"><div class="logo-mark">N</div>NewsML</div>
+  <div class="logo">
+    <div class="logo-mark">N</div>
+    NewsML
+  </div>
   <div class="header-tags">
     <span class="tag-pill" id="abs-status-pill">Offline · NLP</span>
     <span class="tag-pill">Hex Softwares</span>
   </div>
 </header>
 
+<!-- ── Masthead ────────────────────────────────────────────────────── -->
 <section class="masthead">
   <div class="masthead-inner">
     <div>
@@ -187,87 +31,148 @@
       <h1>Summarize<br/><em>News</em><br/>Articles.</h1>
     </div>
     <div class="masthead-side">
-      <p class="masthead-desc">Extractive &amp; Abstractive NLP — condense any news article instantly using offline frequency scoring or HuggingFace BART-generated summaries.</p>
+      <p class="masthead-desc">
+        Extractive &amp; Abstractive NLP — condense any news article instantly
+        using offline frequency scoring or HuggingFace BART-generated summaries.
+      </p>
       <div class="masthead-stats">
-        <div class="stat-box"><div class="stat-box-num">2</div><div class="stat-box-lbl">NLP Modes</div></div>
-        <div class="stat-box"><div class="stat-box-num">BART</div><div class="stat-box-lbl">HuggingFace</div></div>
-        <div class="stat-box"><div class="stat-box-num">1–10</div><div class="stat-box-lbl">Sentences</div></div>
-        <div class="stat-box"><div class="stat-box-num">Auto</div><div class="stat-box-lbl">Saves Output</div></div>
+        <div class="stat-box">
+          <div class="stat-box-num">2</div>
+          <div class="stat-box-lbl">NLP Modes</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-num">BART</div>
+          <div class="stat-box-lbl">HuggingFace</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-num">1–10</div>
+          <div class="stat-box-lbl">Sentences</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-num">Auto</div>
+          <div class="stat-box-lbl">Saves Output</div>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Scrolling ticker -->
   <div class="ticker">
     <div class="ticker-inner">
-      <span class="ticker-item">Extractive Summarization <span class="ticker-dot">·</span> Abstractive BART <span class="ticker-dot">·</span> HuggingFace Transformers <span class="ticker-dot">·</span> Word Frequency Scoring <span class="ticker-dot">·</span> Offline NLP <span class="ticker-dot">·</span> Auto-saves to outputs/ <span class="ticker-dot">·</span> Hex Softwares Internship <span class="ticker-dot">·</span></span>
-      <span class="ticker-item">Extractive Summarization <span class="ticker-dot">·</span> Abstractive BART <span class="ticker-dot">·</span> HuggingFace Transformers <span class="ticker-dot">·</span> Word Frequency Scoring <span class="ticker-dot">·</span> Offline NLP <span class="ticker-dot">·</span> Auto-saves to outputs/ <span class="ticker-dot">·</span> Hex Softwares Internship <span class="ticker-dot">·</span></span>
+      <span class="ticker-item">
+        Extractive Summarization <span class="ticker-dot">·</span>
+        Abstractive BART <span class="ticker-dot">·</span>
+        HuggingFace Transformers <span class="ticker-dot">·</span>
+        Word Frequency Scoring <span class="ticker-dot">·</span>
+        Offline NLP <span class="ticker-dot">·</span>
+        Auto-saves to outputs/ <span class="ticker-dot">·</span>
+        Hex Softwares Internship <span class="ticker-dot">·</span>
+      </span>
+      <span class="ticker-item" aria-hidden="true">
+        Extractive Summarization <span class="ticker-dot">·</span>
+        Abstractive BART <span class="ticker-dot">·</span>
+        HuggingFace Transformers <span class="ticker-dot">·</span>
+        Word Frequency Scoring <span class="ticker-dot">·</span>
+        Offline NLP <span class="ticker-dot">·</span>
+        Auto-saves to outputs/ <span class="ticker-dot">·</span>
+        Hex Softwares Internship <span class="ticker-dot">·</span>
+      </span>
     </div>
   </div>
 </section>
 
+<!-- ── Main Content ─────────────────────────────────────────────────── -->
 <div class="content-wrapper">
-  <!-- FORM -->
+
+  <!-- Left column: form + results -->
   <div class="form-section fade-up">
     <div class="section-label">Article Input</div>
 
+    <!-- Title field -->
     <div class="field">
       <div class="field-label">
         <span>Article Title</span>
         <span class="field-hint">Optional — labels the saved output file</span>
       </div>
-      <input type="text" id="article-title" placeholder="e.g. NASA Artemis Mission Update" maxlength="120"/>
+      <input type="text" id="article-title"
+             placeholder="e.g. NASA Artemis Mission Update"
+             maxlength="120"/>
     </div>
 
+    <!-- Article text field -->
     <div class="field">
       <div class="field-label">
         <span>Article Text <span class="req">*</span></span>
         <span class="field-hint">Minimum 80 characters</span>
       </div>
-      <textarea id="article-text" placeholder="Paste your full news article here…" maxlength="6000" oninput="updateCharCount()"></textarea>
+      <textarea id="article-text"
+                placeholder="Paste your full news article here…"
+                maxlength="6000"
+                oninput="updateCharCount()"></textarea>
       <div class="char-row">
         <span class="word-count" id="word-count">0 words</span>
         <span class="char-count" id="char-count">0 / 6000</span>
       </div>
     </div>
 
-    <!-- MODE TOGGLE -->
+    <!-- Mode toggle -->
     <div class="mode-wrap">
       <span class="mode-label">Summarization Mode <span class="req">*</span></span>
       <div class="mode-btns">
-        <button class="mode-btn active" data-mode="extractive" onclick="setMode('extractive')">Extractive</button>
-        <button class="mode-btn" data-mode="abstractive" onclick="setMode('abstractive')">Abstractive</button>
-        <button class="mode-btn" data-mode="both" onclick="setMode('both')">Both</button>
+        <button class="mode-btn active" data-mode="extractive"  onclick="setMode('extractive')">Extractive</button>
+        <button class="mode-btn"        data-mode="abstractive" onclick="setMode('abstractive')">Abstractive</button>
+        <button class="mode-btn"        data-mode="both"        onclick="setMode('both')">Both</button>
       </div>
       <div class="mode-hint" id="mode-hint">Offline · frequency scoring · instant</div>
     </div>
 
-    <!-- SENTENCE SLIDER (extractive only) -->
+    <!-- Sentence slider (hidden when mode = abstractive) -->
     <div class="slider-wrap" id="slider-section">
-      <div class="field-label"><span>Sentences to Extract <span class="req">*</span></span></div>
+      <div class="field-label">
+        <span>Sentences to Extract <span class="req">*</span></span>
+      </div>
       <div class="slider-row">
-        <input type="range" id="num-slider" min="1" max="10" value="3" step="1" oninput="updateSlider(this.value)"/>
+        <input type="range" id="num-slider"
+               min="1" max="10" value="3" step="1"
+               oninput="updateSlider(this.value)"/>
         <span class="range-val" id="slider-val">3</span>
       </div>
-      <div class="range-labels"><span>Min 1</span><span>Max 10</span></div>
+      <div class="range-labels">
+        <span>Min 1</span>
+        <span>Max 10</span>
+      </div>
     </div>
 
+    <!-- Info note -->
     <div class="note-box">
       <span>—</span>
-      <span id="note-text">
-        <strong style="color:var(--white)">Extractive</strong> works entirely offline using <code>word-frequency scoring</code>. <strong style="color:var(--white)">Abstractive</strong> uses <code>facebook/bart-large-cnn</code> via HuggingFace — requires <code>pip install transformers torch</code> and ~1.6 GB download on first run.
+      <span>
+        <strong style="color:var(--white)">Extractive</strong> works entirely offline
+        using <code>word-frequency scoring</code>.
+        <strong style="color:var(--white)">Abstractive</strong> uses
+        <code>facebook/bart-large-cnn</code> via HuggingFace — requires
+        <code>pip install transformers torch</code> and ~1.6 GB download on first run.
       </span>
     </div>
 
-    <div id="error-banner">⚑&ensp;<span id="error-msg"></span></div>
+    <!-- Error banner -->
+    <div id="error-banner">
+      ⚑&ensp;<span id="error-msg"></span>
+    </div>
 
+    <!-- Action buttons -->
     <div class="btn-row">
       <button class="btn-run" id="submit-btn" onclick="handleSubmit()">
         <span id="btn-label">Summarize</span>
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <svg width="13" height="13" fill="none" stroke="currentColor"
+             stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
       </button>
       <button class="btn-ghost" onclick="resetForm()">Clear</button>
     </div>
 
-    <!-- OUTPUT -->
+    <!-- ── Results ──────────────────────────────────────────────────── -->
     <div id="output-section">
       <div class="output-divider">
         <div class="output-divider-line"></div>
@@ -275,7 +180,7 @@
         <div class="output-divider-line"></div>
       </div>
 
-      <!-- Extractive result -->
+      <!-- Extractive result panel -->
       <div class="result-panel" id="ext-panel" style="display:none">
         <div class="result-top">
           <div>
@@ -291,7 +196,7 @@
         </div>
       </div>
 
-      <!-- Abstractive result -->
+      <!-- Abstractive result panel -->
       <div class="result-panel" id="abs-panel" style="display:none">
         <div class="result-top">
           <div>
@@ -309,249 +214,105 @@
 
       <!-- Abstractive unavailable notice -->
       <div class="abs-warning" id="abs-unavailable" style="display:none">
-        ⚠ Abstractive model not available in browser mode. Run <code>python app.py</code> with <code>transformers</code> installed to use BART.
+        ⚠ Abstractive model not available in browser mode.
+        Run <code>python app.py</code> with <code>transformers</code> installed to use BART.
       </div>
     </div>
   </div>
 
-  <!-- SIDEBAR -->
+  <!-- Right column: sidebar -->
   <div class="sidebar fade-up" style="animation-delay:.08s">
     <div class="section-label">How It Works</div>
+
     <div class="how-card" style="margin-bottom:28px">
       <div class="how-card-head">Process</div>
+
       <div class="how-step">
         <div class="step-n">01</div>
-        <div class="step-text-wrap">
+        <div>
           <div class="step-title">Paste Your Article</div>
           <div class="step-desc">HTML tags and extra whitespace are stripped automatically.</div>
         </div>
       </div>
+
       <div class="how-step">
         <div class="step-n">02</div>
-        <div class="step-text-wrap">
+        <div>
           <div class="step-title">Choose Mode</div>
           <div class="step-desc">Extractive picks existing sentences. Abstractive generates brand-new text using BART.</div>
         </div>
       </div>
+
       <div class="how-step">
         <div class="step-n">03</div>
-        <div class="step-text-wrap">
+        <div>
           <div class="step-title">Get Your Summary</div>
-          <div class="step-desc">Results appear instantly. Both summaries auto-saved to <code style="font-family:monospace;font-size:10px;color:var(--gray-6)">outputs/</code>.</div>
+          <div class="step-desc">
+            Results appear instantly. Summaries auto-saved to
+            <code style="font-family:monospace;font-size:10px;color:var(--gray-6)">outputs/</code>.
+          </div>
         </div>
       </div>
     </div>
 
     <div class="section-label">Algorithm</div>
+
     <div class="algo-card">
       <div class="algo-card-head">Extractive Pipeline</div>
-      <div class="algo-row"><div class="algo-step">Clean</div><div class="algo-desc">Strip HTML, collapse whitespace, normalise text</div></div>
-      <div class="algo-row"><div class="algo-step">Split</div><div class="algo-desc">Tokenise into sentences on <code style="font-family:monospace;font-size:10px">. ! ?</code> boundaries</div></div>
-      <div class="algo-row"><div class="algo-step">Score</div><div class="algo-desc">Build normalised word-frequency table, score each sentence</div></div>
-      <div class="algo-row"><div class="algo-step">Extract</div><div class="algo-desc">Pick top-N, re-order to original reading flow</div></div>
+      <div class="algo-row">
+        <div class="algo-step">Clean</div>
+        <div class="algo-desc">Strip HTML, collapse whitespace, normalise text</div>
+      </div>
+      <div class="algo-row">
+        <div class="algo-step">Split</div>
+        <div class="algo-desc">Tokenise into sentences on <code style="font-family:monospace;font-size:10px">. ! ?</code> boundaries</div>
+      </div>
+      <div class="algo-row">
+        <div class="algo-step">Score</div>
+        <div class="algo-desc">Build normalised word-frequency table, score each sentence</div>
+      </div>
+      <div class="algo-row">
+        <div class="algo-step">Extract</div>
+        <div class="algo-desc">Pick top-N, re-order to original reading flow</div>
+      </div>
     </div>
 
     <div style="margin-top:20px">
-    <div class="algo-card">
-      <div class="algo-card-head">Abstractive Pipeline</div>
-      <div class="algo-row"><div class="algo-step">Clean</div><div class="algo-desc">Strip HTML, chunk long articles (&gt;3000 chars)</div></div>
-      <div class="algo-row"><div class="algo-step">Encode</div><div class="algo-desc">BART tokenizer converts text to token IDs</div></div>
-      <div class="algo-row"><div class="algo-step">Generate</div><div class="algo-desc">Seq2seq model generates new condensed sentences</div></div>
-      <div class="algo-row"><div class="algo-step">Decode</div><div class="algo-desc">Token IDs decoded back to human-readable text</div></div>
-    </div>
+      <div class="algo-card">
+        <div class="algo-card-head">Abstractive Pipeline</div>
+        <div class="algo-row">
+          <div class="algo-step">Clean</div>
+          <div class="algo-desc">Strip HTML, chunk long articles (&gt;3000 chars)</div>
+        </div>
+        <div class="algo-row">
+          <div class="algo-step">Encode</div>
+          <div class="algo-desc">BART tokenizer converts text to token IDs</div>
+        </div>
+        <div class="algo-row">
+          <div class="algo-step">Generate</div>
+          <div class="algo-desc">Seq2seq model generates new condensed sentences</div>
+        </div>
+        <div class="algo-row">
+          <div class="algo-step">Decode</div>
+          <div class="algo-desc">Token IDs decoded back to human-readable text</div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
+</div><!-- end .content-wrapper -->
+
+<!-- ── Footer ──────────────────────────────────────────────────────── -->
 <footer>
   <div class="footer-left">NewsML — Article Summarizer</div>
   <div class="footer-right">Hex Softwares Internship &nbsp;·&nbsp; ML/NLP Project 01</div>
 </footer>
 
-<div class="toast" id="toast"></div>
+<!-- Toast notification -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script>
-  /* ── State ── */
-  let currentMode = 'extractive';
-  let isFlask = false;
-  let abstractiveAvailable = false;
+<!-- External JS (loaded last so DOM is ready) -->
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
-  const STOPWORDS = new Set([
-    'the','a','an','is','it','in','on','at','to','for','of','and','or','but',
-    'with','that','this','was','are','be','been','by','from','as','its','into',
-    'than','then','so','if','about','has','have','had','not','which','who',
-    'they','their','he','she','we','you','i','my','our','your','his','her',
-    'also','more','can','will','would','could','should','may','might','shall',
-    'do','did','does','just','very','much','many','some','such','when','where',
-    'after','before','while','since','because','though','although'
-  ]);
-
-  /* ── Mode toggle ── */
-  function setMode(mode) {
-    currentMode = mode;
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-    const hints = {
-      extractive: 'Offline · frequency scoring · instant',
-      abstractive: 'HuggingFace BART · requires transformers install · ~1.6 GB first run',
-      both: 'Runs extractive first (instant), then BART (requires transformers)'
-    };
-    document.getElementById('mode-hint').textContent = hints[mode];
-    // Show/hide sentence slider (only relevant for extractive)
-    document.getElementById('slider-section').style.display = mode === 'abstractive' ? 'none' : '';
-  }
-
-  /* ── Flask + model-status detection ── */
-  async function detectFlask() {
-    try {
-      const res = await fetch('/model-status', { signal: AbortSignal.timeout(1500) });
-      if (res.ok) {
-        isFlask = true;
-        const data = await res.json();
-        abstractiveAvailable = data.abstractive_available;
-        const pill = document.getElementById('abs-status-pill');
-        pill.textContent = abstractiveAvailable ? 'BART · Ready' : 'BART · Install needed';
-      }
-    } catch { isFlask = false; }
-  }
-
-  /* ── Offline JS extractive fallback ── */
-  function jsSummarize(text, n) {
-    const sents = (text.match(/[^.!?]+[.!?]+/g)||[]).map(s=>s.trim()).filter(s=>s.length>25);
-    if (!sents.length) return text.trim();
-    if (sents.length <= n) return sents.join(' ');
-    const words = text.toLowerCase().match(/\b[a-z]{3,}\b/g)||[];
-    const freq = {}; let maxF = 1;
-    for (const w of words) {
-      if (!STOPWORDS.has(w)) { freq[w]=(freq[w]||0)+1; if(freq[w]>maxF) maxF=freq[w]; }
-    }
-    for (const k in freq) freq[k] /= maxF;
-    const scored = sents.map((s,i)=>({s,i,score:(s.toLowerCase().match(/\b[a-z]{3,}\b/g)||[]).reduce((a,t)=>a+(!STOPWORDS.has(t)?(freq[t]||0):0),0)}));
-    const top = new Set([...scored].sort((a,b)=>b.score-a.score).slice(0,n).map(x=>x.i));
-    return scored.filter(x=>top.has(x.i)).map(x=>x.s).join(' ');
-  }
-
-  /* ── Helpers ── */
-  function countWords(t) { return (t.trim().match(/\S+/g)||[]).length; }
-  function updateCharCount() {
-    const t = document.getElementById('article-text').value;
-    const cc = document.getElementById('char-count');
-    cc.textContent = `${t.length} / 6000`;
-    cc.classList.toggle('warn', t.length > 5500);
-    document.getElementById('word-count').textContent = `${countWords(t)} words`;
-  }
-  function updateSlider(v) { document.getElementById('slider-val').textContent = v; }
-  function setProgress(p) { document.getElementById('progress-bar').style.width = p+'%'; }
-  function showError(msg) {
-    document.getElementById('error-msg').textContent = msg;
-    document.getElementById('error-banner').style.display = 'flex';
-  }
-  function hideError() { document.getElementById('error-banner').style.display = 'none'; }
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = '✓  '+msg; t.classList.add('show');
-    clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 3200);
-  }
-  function resetForm() {
-    ['article-title','article-text'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('num-slider').value='3';
-    document.getElementById('slider-val').textContent='3';
-    document.getElementById('char-count').textContent='0 / 6000';
-    document.getElementById('word-count').textContent='0 words';
-    document.getElementById('char-count').classList.remove('warn');
-    document.getElementById('output-section').style.display='none';
-    hideError();
-  }
-
-  function showResultPanel(panelId, textId, metaId, statsId, text, label) {
-    const panel = document.getElementById(panelId);
-    const meta  = document.getElementById(metaId);
-    document.getElementById(textId).textContent = text || '(no output)';
-    meta.textContent = `${new Date().toLocaleTimeString()}  ·  ${label}`;
-    document.getElementById(statsId).innerHTML = `<span>${countWords(text)} words</span><span>${text.length} chars</span>`;
-    panel.style.display = 'block';
-  }
-
-  /* ── Main submit ── */
-  async function handleSubmit() {
-    hideError();
-    const text  = document.getElementById('article-text').value.trim();
-    const title = document.getElementById('article-title').value.trim() || 'Untitled Article';
-    const nSent = parseInt(document.getElementById('num-slider').value) || 3;
-    const mode  = currentMode;
-
-    if (!text)           { showError('Please paste your article text.'); return; }
-    if (text.length < 80){ showError('Article too short — provide at least 80 characters.'); return; }
-
-    const btn = document.getElementById('submit-btn');
-    const lbl = document.getElementById('btn-label');
-    btn.disabled = true;
-    lbl.innerHTML = 'Processing <span class="spinner"></span>';
-    setProgress(20);
-
-    // Hide previous results
-    ['ext-panel','abs-panel','abs-unavailable'].forEach(id=>document.getElementById(id).style.display='none');
-
-    try {
-      if (isFlask) {
-        /* ── Flask mode ── */
-        setProgress(50);
-        const res  = await fetch('/summarize', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ text, title, num_sentences: nSent, mode })
-        });
-        setProgress(90);
-        const data = await res.json();
-        if (!res.ok) { showError(data.error || 'Server error.'); return; }
-
-        if (data.extractive && (mode==='extractive'||mode==='both')) {
-          showResultPanel('ext-panel','out-extractive','ext-meta','ext-stats', data.extractive, `"${title}" · ${nSent} sentences`);
-        }
-        if (mode==='abstractive'||mode==='both') {
-          if (data.abstractive) {
-            showResultPanel('abs-panel','out-abstractive','abs-meta','abs-stats', data.abstractive, `"${title}" · BART`);
-          } else {
-            document.getElementById('abs-unavailable').style.display = 'block';
-          }
-        }
-        showToast('Saved to outputs/');
-
-      } else {
-        /* ── Offline / browser-only mode ── */
-        setProgress(70);
-        if (mode==='abstractive') {
-          document.getElementById('abs-unavailable').style.display = 'block';
-        } else {
-          const result = jsSummarize(text, nSent);
-          setProgress(95);
-          showResultPanel('ext-panel','out-extractive','ext-meta','ext-stats', result, `"${title}" · ${nSent} sentences`);
-          if (mode==='both') document.getElementById('abs-unavailable').style.display = 'block';
-        }
-        showToast('Summary ready');
-      }
-
-      const sec = document.getElementById('output-section');
-      sec.style.display = 'block';
-      setTimeout(()=>sec.scrollIntoView({behavior:'smooth',block:'start'}), 60);
-
-    } catch(err) {
-      showError('Error: '+err.message);
-    } finally {
-      setProgress(100);
-      setTimeout(()=>setProgress(0), 400);
-      btn.disabled = false;
-      lbl.textContent = 'Summarize';
-    }
-  }
-
-  function copyResult(textId, btn) {
-    const text = document.getElementById(textId).textContent;
-    navigator.clipboard.writeText(text).then(()=>{
-      btn.textContent = 'Copied';
-      setTimeout(()=>btn.textContent='Copy', 2000);
-    });
-  }
-
-  detectFlask();
-</script>
 </body>
 </html>

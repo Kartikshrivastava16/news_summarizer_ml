@@ -1,0 +1,172 @@
+/* ══════════════════════════════════════════════════════════════════════
+   NewsML — Redirect / Server-Detection Page Styles
+   static/css/redirect.css
+   Loaded only by templates/redirect.html (on top of style.css base)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Page Layout ────────────────────────────────────────────────────── */
+body.redirect-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 32px;
+  padding: 40px 20px;
+  font-family: var(--font-mono);
+}
+
+/* ── Logo (overrides base — larger on this page) ────────────────────── */
+body.redirect-page .logo {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: var(--white);
+}
+
+body.redirect-page .logo-mark {
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────── */
+.rd-card {
+  border: 1px solid var(--border);
+  background: var(--gray-1);
+  padding: 36px 40px;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+}
+
+.rd-card h2 {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--white);
+}
+
+.rd-card p {
+  font-size: 12px;
+  color: var(--gray-5);
+  line-height: 1.9;
+  margin-bottom: 24px;
+  font-family: var(--font-sans);
+}
+
+/* ── Status icon ────────────────────────────────────────────────────── */
+.rd-status-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+/* ── Spinner ────────────────────────────────────────────────────────── */
+.rd-spinner-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.rd-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray-4);
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: rd-spin 0.8s linear infinite;
+}
+
+@keyframes rd-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Pulsing dots ───────────────────────────────────────────────────── */
+.rd-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.rd-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--gray-3);
+  border-radius: 50%;
+  animation: rd-pulse 1.2s ease-in-out infinite;
+}
+
+.rd-dot:nth-child(2) { animation-delay: 0.2s; }
+.rd-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes rd-pulse {
+  0%, 100% { background: var(--gray-3); }
+  50%       { background: var(--white); }
+}
+
+/* ── Button ─────────────────────────────────────────────────────────── */
+.rd-btn {
+  display: inline-block;
+  background: var(--white);
+  color: var(--black);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 13px 28px;
+  transition: background 0.15s;
+}
+
+.rd-btn:hover {
+  background: var(--gray-8);
+  color: var(--black);
+}
+
+/* ── Command box ────────────────────────────────────────────────────── */
+.rd-cmd-box {
+  border: 1px solid var(--border);
+  background: var(--black);
+  padding: 14px 18px;
+  margin-top: 28px;
+  text-align: left;
+}
+
+.rd-cmd-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gray-5);
+  margin-bottom: 8px;
+  font-family: var(--font-mono);
+}
+
+.rd-cmd-line {
+  font-size: 12px;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+}
+
+.rd-cmd-prompt {
+  color: var(--gray-5);
+}
+
+/* ── Footer note ────────────────────────────────────────────────────── */
+.rd-footer-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gray-5);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
